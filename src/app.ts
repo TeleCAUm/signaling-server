@@ -7,17 +7,17 @@ const app: Application = express()
 const server: http.Server = http.createServer(app)
 const io: SocketIOServer = new SocketIOServer(server, {
   cors: {
-    origin: 'http://localhost:3001',
+    origin: '*',
     credentials: false
   }
 })
 
 app.use(cors())
-const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080
+const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 3333
 
 interface User {
   id: string
-  email: string
+  name: string
 }
 
 interface UsersMap {
@@ -34,16 +34,16 @@ const socketToRoom: SocketToRoomMap = {}
 const maximum: number = process.env.MAXIMUM ? parseInt(process.env.MAXIMUM, 10) : 4
 
 io.on('connection', (socket: Socket) => {
-  socket.on('join_room', (data: { room: string; email: string }) => {
+  socket.on('join_room', (data: { room: string; name: string }) => {
     if (users[data.room]) {
       const length: number = users[data.room].length
       if (length === maximum) {
         socket.to(socket.id).emit('room_full')
         return
       }
-      users[data.room].push({ id: socket.id, email: data.email })
+      users[data.room].push({ id: socket.id, name: data.name })
     } else {
-      users[data.room] = [{ id: socket.id, email: data.email }]
+      users[data.room] = [{ id: socket.id, name: data.name }]
     }
     socketToRoom[socket.id] = data.room
 
@@ -63,12 +63,12 @@ io.on('connection', (socket: Socket) => {
       sdp: string
       offerReceiveID: string
       offerSendID: string
-      offerSendEmail: string
+      offerSendName: string
     }) => {
       socket.to(data.offerReceiveID).emit('getOffer', {
         sdp: data.sdp,
         offerSendID: data.offerSendID,
-        offerSendEmail: data.offerSendEmail
+        offerSendName: data.offerSendName
       })
     }
   )
