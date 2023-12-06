@@ -31,7 +31,7 @@ interface SocketToRoomMap {
 const users: UsersMap = {}
 const socketToRoom: SocketToRoomMap = {}
 
-const maximum: number = process.env.MAXIMUM ? parseInt(process.env.MAXIMUM, 10) : 4
+const maximum: number = process.env.MAXIMUM ? parseInt(process.env.MAXIMUM, 10) : 10
 
 io.on('connection', (socket: Socket) => {
   socket.on('join_room', (data: { room: string; name: string }) => {
