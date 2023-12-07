@@ -13,11 +13,12 @@ const io: SocketIOServer = new SocketIOServer(server, {
 })
 
 app.use(cors())
-const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 3333
+const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4444
 
 interface User {
   id: string
   name: string
+  ipAddress: string
 }
 
 interface UsersMap {
@@ -34,6 +35,10 @@ const socketToRoom: SocketToRoomMap = {}
 const maximum: number = process.env.MAXIMUM ? parseInt(process.env.MAXIMUM, 10) : 10
 
 io.on('connection', (socket: Socket) => {
+  const rawIpAddress: string = socket.request.connection.remoteAddress || 'Unknown'
+  const ipPattern = /(\d{1,3}\.){3}\d{1,3}/
+  const ipAddress: string = rawIpAddress?.match(ipPattern)?.at(0) || 'localhost'
+
   socket.on('join_room', (data: { room: string; name: string }) => {
     if (users[data.room]) {
       const length: number = users[data.room].length
@@ -41,30 +46,27 @@ io.on('connection', (socket: Socket) => {
         socket.to(socket.id).emit('room_full')
         return
       }
-      users[data.room].push({ id: socket.id, name: data.name })
+      users[data.room].push({
+        id: socket.id,
+        name: data.name,
+        ipAddress: ipAddress
+      })
     } else {
-      users[data.room] = [{ id: socket.id, name: data.name }]
+      users[data.room] = [{ id: socket.id, name: data.name, ipAddress: ipAddress }]
     }
     socketToRoom[socket.id] = data.room
 
     socket.join(data.room)
-    console.log(`[${socketToRoom[socket.id]}]: ${socket.id} enter`)
-
     const usersInThisRoom: User[] = users[data.room].filter((user) => user.id !== socket.id)
 
-    console.log(usersInThisRoom)
+    console.log(users)
 
     io.sockets.to(socket.id).emit('all_users', usersInThisRoom)
   })
 
   socket.on(
     'offer',
-    (data: {
-      sdp: string
-      offerReceiveID: string
-      offerSendID: string
-      offerSendName: string
-    }) => {
+    (data: { sdp: string; offerReceiveID: string; offerSendID: string; offerSendName: string }) => {
       socket.to(data.offerReceiveID).emit('getOffer', {
         sdp: data.sdp,
         offerSendID: data.offerSendID,
