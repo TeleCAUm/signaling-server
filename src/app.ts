@@ -13,7 +13,7 @@ const io: SocketIOServer = new SocketIOServer(server, {
 })
 
 app.use(cors())
-const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4444
+const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 3333
 
 interface User {
   id: string
